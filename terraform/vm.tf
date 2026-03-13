@@ -33,7 +33,7 @@ resource "azurerm_subnet" "subnet" {
 }
 
 # IP Pública
-# IP pública estática para acceder al servidor web nginx desde Internet.
+# IP pública estática para acceder al servidor web azure-vote-front desde Internet.
 
 resource "azurerm_public_ip" "public_ip" {
   name                = var.public_ip_name
@@ -69,7 +69,7 @@ resource "azurerm_network_security_group" "nsg" {
     destination_address_prefix = "*"
   }
 
-  # Puerto 80: acceso al servidor web nginx contenerizado con Podman
+  # Puerto 80: acceso al servidor web azure-vote-front contenerizado con Podman
   security_rule {
     name                       = "allow-http"
     priority                   = 110
