@@ -1,0 +1,51 @@
+- name: Update apt packages
+  become: true
+  apt:
+    update_cache: yes
+
+- name: Install Podman
+  become: true
+  apt:
+    name: podman
+    state: present
+
+- name: Get ACR username
+  command: az acr credential show --name {{ acr_name }} --query username -o tsv
+  delegate_to: localhost
+  register: acr_username
+
+- name: Get ACR password
+  command: az acr credential show --name {{ acr_name }} --query "passwords[0].value" -o tsv
+  delegate_to: localhost
+  register: acr_password
+
+- name: Login to ACR with Podman
+  command: podman login {{ acr_name }}.azurecr.io --username {{ acr_username.stdout }} --password {{ acr_password.stdout }}
+
+- name: Allow unprivileged port 80 for rootless Podman
+  become: true
+  sysctl:
+    name: net.ipv4.ip_unprivileged_port_start
+    value: "80"
+    sysctl_set: yes
+    state: present
+    reload: yes
+
+- name: Create vote pod
+  command: podman pod create --name vote-pod --replace -p 80:80
+
+- name: Run Redis container in pod
+  containers.podman.podman_container:
+    name: redis
+    image: docker.io/library/redis:latest
+    pod: vote-pod
+    state: started
+
+- name: Run azure-vote-front container in pod
+  containers.podman.podman_container:
+    name: azure-vote-front
+    image: "{{ acr_name }}.azurecr.io/azure-vote-front:v1"
+    pod: vote-pod
+    state: started
+    env:
+      REDIS: localhost

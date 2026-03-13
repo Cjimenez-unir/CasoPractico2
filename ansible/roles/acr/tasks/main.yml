@@ -1,0 +1,7 @@
+- name: Import azure-vote-front image from Docker Hub to ACR
+  command: >
+    az acr import
+    --name {{ acr_name }}
+    --source docker.io/jsosa15/azure-vote-front:v1
+    --image azure-vote-front:v1
+    --force
